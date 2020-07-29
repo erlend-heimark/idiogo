@@ -2,11 +2,11 @@ package main
 
 import (
 	"github.com/erlend-heimark/idiogo/pkg/config"
-	"github.com/erlend-heimark/idiogo/pkg/router"
+	"github.com/erlend-heimark/idiogo/pkg/api"
 )
 
 func main() {
 	cfg := config.New()
 
-	router.Init(cfg.Path, cfg.Port)
+	api.Init(cfg.Path, cfg.Port, cfg.DadJokeURL)
 }

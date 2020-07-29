@@ -10,7 +10,7 @@ all: test build
 
 .PHONY: build
 build:
-	go build -a $(LDFLAGS) cmd/idiogo/main.go
+	go build -a $(LDFLAGS) cmd/main.go
 
 .PHONY: test
 test:

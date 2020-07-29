@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/erlend-heimark/idiogo/pkg/config"
 	"github.com/erlend-heimark/idiogo/pkg/api"
+	"github.com/erlend-heimark/idiogo/pkg/config"
 	"github.com/erlend-heimark/idiogo/pkg/storage/mssql"
 )
 

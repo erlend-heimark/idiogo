@@ -16,7 +16,8 @@ func Init(path, port, dadJokeURL string, client mssql.Client) {
 
 	router.Route(path, func(r chi.Router) {
 		r.Route("/dadjokes", func(r chi.Router) {
-			r.Get("/", getDadJoke(dadJokeURL))
+			r.Get("/{jokeId}", getDadJoke(client, dadJokeURL))
+			r.Get("/", getRandomDadJoke(dadJokeURL))
 			r.Post("/", createDadJoke(client))
 		})
 	})
@@ -32,24 +33,36 @@ func Init(path, port, dadJokeURL string, client mssql.Client) {
 	}
 }
 
-func getDadJoke(dadJokeURL string) http.HandlerFunc {
+func getDadJoke(client mssql.Client, dadJokeURL string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		jokeID := chi.URLParam(r, "jokeId")
+		savedJoke, exists, err := client.GetDadJoke(r.Context(), jokeID)
+		if err != nil {
+			writeErrorResponse(w, err)
+			return
+		}
+		if exists {
+			writeSuccessResponse(w, savedJoke)
+			return
+		}
+		extJoke, err := externaldadjokes.Get(dadJokeURL)
+		if err != nil {
+			writeErrorResponse(w, err)
+		}
+
+		writeSuccessResponse(w, extJoke)
+	}
+}
+
+func getRandomDadJoke(dadJokeURL string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		d, err := externaldadjokes.Get(dadJokeURL)
 		if err != nil {
 			writeErrorResponse(w, err)
 			return
 		}
-		jokeJson, err := json.Marshal(d)
-		if err != nil {
-			writeErrorResponse(w, err)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(200)
-		_, err = w.Write(jokeJson)
-		if err != nil {
-			panic("oops")
-		}
+
+		writeSuccessResponse(w, d)
 	}
 }
 
@@ -75,6 +88,20 @@ func createDadJoke(client mssql.Client) http.HandlerFunc {
 func writeErrorResponse(w http.ResponseWriter, e error) {
 	w.WriteHeader(500)
 	_, err := w.Write([]byte(e.Error()))
+	if err != nil {
+		panic("oops")
+	}
+}
+
+func writeSuccessResponse(w http.ResponseWriter, response interface{}) {
+	resp, err := json.Marshal(response)
+	if err != nil {
+		writeErrorResponse(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err = w.Write(resp)
 	if err != nil {
 		panic("oops")
 	}

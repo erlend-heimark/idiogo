@@ -10,12 +10,12 @@ type DadJoke struct {
 	Joke string `db:"joke"`
 }
 
-const getDadJokeSQL = `select id, joke from dadjokes.dadjokes`
+const getDadJokeSQL = `select d.id, d.joke from dadjokes.dadjokes d where id = @ID`
 
-func (c Client) GetDadJoke(ctx context.Context) (*DadJoke, bool, error) {
-	row := c.db.QueryRowContext(ctx, getDadJokeSQL)
+func (c Client) GetDadJoke(ctx context.Context, id string) (*DadJoke, bool, error) {
+	row := c.db.QueryRowContext(ctx, getDadJokeSQL, sql.Named("ID", id))
 	var d DadJoke
-	err := row.Scan(&d)
+	err := row.Scan(&d.ID, &d.Joke)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, false, nil

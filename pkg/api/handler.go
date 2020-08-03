@@ -56,18 +56,14 @@ func getDadJoke(db mssql.Client, fetcher externaldadjokes.Fetcher) http.HandlerF
 		jokeID := chi.URLParam(r, "jokeId")
 		savedJoke, exists, err := db.GetDadJoke(r.Context(), jokeID)
 		if err != nil {
-			return apiResponse{
-				nil, 500, err,
-			}
+			return apiResponse{nil, 500, err}
 		}
 		if exists {
 			return apiResponse{savedJoke, 200, nil}
 		}
 		extJoke, exists, err := fetcher.Get(jokeID)
 		if err != nil {
-			return apiResponse{
-				nil, 0, err,
-			}
+			return apiResponse{nil, 0, err}
 		}
 		if !exists {
 			return apiResponse{nil, 404, nil}
@@ -80,9 +76,7 @@ func getRandomDadJoke(fetcher externaldadjokes.Fetcher) http.HandlerFunc {
 	return createHandler(func(r *http.Request) apiResponse {
 		d, err := fetcher.GetRandom()
 		if err != nil {
-			return apiResponse{
-				nil, 500, err,
-			}
+			return apiResponse{nil, 500, err}
 		}
 		return apiResponse{d, 200, nil}
 	})
@@ -93,16 +87,12 @@ func createDadJoke(db mssql.Client) http.HandlerFunc {
 		var dadJoke mssql.DadJoke
 		err := json.NewDecoder(r.Body).Decode(&dadJoke)
 		if err != nil {
-			return apiResponse{
-				nil, 500, err,
-			}
+			return apiResponse{nil, 500, err}
 		}
 
 		err = db.CreateDadJoke(r.Context(), dadJoke)
 		if err != nil {
-			return apiResponse{
-				nil, 500, err,
-			}
+			return apiResponse{nil, 500, err}
 		}
 		return apiResponse{nil, 200, nil}
 	})
@@ -126,27 +116,16 @@ func createHandler(handleRequest func(r *http.Request) apiResponse) http.Handler
 func handleResponse(w http.ResponseWriter, res apiResponse) {
 	w.WriteHeader(res.statusCode)
 	if res.err != nil {
-		writeErrorResponse(w, res.err)
+		_, _ = w.Write([]byte(res.err.Error()))
 	}
 	if res.data != nil {
 		resp, err := json.Marshal(res)
 		if err != nil {
-			writeErrorResponse(w, err)
+			_, _ = w.Write([]byte(res.err.Error()))
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, err = w.Write(resp)
-		if err != nil {
-			panic("oops")
-		}
-	}
-}
-
-func writeErrorResponse(w http.ResponseWriter, e error) {
-	w.WriteHeader(500)
-	_, err := w.Write([]byte(e.Error()))
-	if err != nil {
-		panic("oops")
+		_, _ = w.Write(resp)
 	}
 }
 

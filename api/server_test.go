@@ -8,19 +8,19 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/erlend-heimark/idiogo/pkg/externaldadjokes"
+	"github.com/erlend-heimark/idiogo/extdadjokes"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	"github.com/erlend-heimark/idiogo/pkg/envvars"
-	"github.com/erlend-heimark/idiogo/pkg/storage/mssql"
+	"github.com/erlend-heimark/idiogo/envvars"
+	"github.com/erlend-heimark/idiogo/storage/mssql"
 )
 
 func TestCreateAndGet(t *testing.T) {
 	e := envvars.New()
 	db, err := mssql.NewClient(e.DBConnectionString)
 	require.NoError(t, err)
-	fetcher := externaldadjokes.NewFetcher(e.DadJokeURL)
+	fetcher := extdadjokes.NewFetcher(e.DadJokeURL)
 	server := New(e.Path, e.Port, db, fetcher)
 
 	url := fmt.Sprintf("%s/%s", e.Path, "dadjokes")

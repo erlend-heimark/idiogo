@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/erlend-heimark/idiogo/pkg/storage/mssql"
+	"github.com/erlend-heimark/idiogo/storage/mssql"
 	"github.com/go-chi/chi"
 
-	"github.com/erlend-heimark/idiogo/pkg/externaldadjokes"
+	"github.com/erlend-heimark/idiogo/extdadjokes"
 )
 
 //TODO Handlers sin hovedoppgave er å håndtere requests og response. Burde ha hjelpemetoder
 
-func New(path, port string, db mssql.Client, fetcher externaldadjokes.Fetcher) *http.Server {
+func New(path, port string, db mssql.Client, fetcher extdadjokes.Fetcher) *http.Server {
 	router := chi.NewRouter()
 
 	router.Route(path, func(r chi.Router) {
@@ -30,7 +30,7 @@ func New(path, port string, db mssql.Client, fetcher externaldadjokes.Fetcher) *
 	}
 }
 
-func getDadJoke(db mssql.Client, fetcher externaldadjokes.Fetcher) http.HandlerFunc {
+func getDadJoke(db mssql.Client, fetcher extdadjokes.Fetcher) http.HandlerFunc {
 	return createHandler(func(r *http.Request) apiResponse {
 		jokeID := chi.URLParam(r, "jokeId")
 		savedJoke, exists, err := db.GetDadJoke(r.Context(), jokeID)
@@ -51,7 +51,7 @@ func getDadJoke(db mssql.Client, fetcher externaldadjokes.Fetcher) http.HandlerF
 	})
 }
 
-func getRandomDadJoke(fetcher externaldadjokes.Fetcher) http.HandlerFunc {
+func getRandomDadJoke(fetcher extdadjokes.Fetcher) http.HandlerFunc {
 	return createHandler(func(r *http.Request) apiResponse {
 		d, err := fetcher.GetRandom()
 		if err != nil {
@@ -102,14 +102,14 @@ func handleResponse(w http.ResponseWriter, res apiResponse) {
 	}
 	resp, err := json.Marshal(res.data)
 	if err != nil {
-		_, _ = w.Write([]byte(res.err.Error()))
+		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(resp)
 }
 
-func mapExternalDadJokeToInternal(external *externaldadjokes.DadJoke) mssql.DadJoke {
+func mapExternalDadJokeToInternal(external *extdadjokes.DadJoke) mssql.DadJoke {
 	return mssql.DadJoke{
 		ID:   external.Id,
 		Joke: external.Joke,

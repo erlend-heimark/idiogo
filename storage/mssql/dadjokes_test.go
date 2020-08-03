@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/erlend-heimark/idiogo/pkg/envvars"
+	"github.com/erlend-heimark/idiogo/envvars"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )

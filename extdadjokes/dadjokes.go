@@ -1,4 +1,4 @@
-package externaldadjokes
+package extdadjokes
 
 import (
 	"encoding/json"
@@ -21,42 +21,42 @@ func NewFetcher(dadJokeURL string) Fetcher {
 }
 
 func (f Fetcher) GetRandom() (*DadJoke, error) {
-	req, err := http.NewRequest(http.MethodGet, f.dadJokeURL, nil)
+	r, err := http.NewRequest(http.MethodGet, f.dadJokeURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	r.Header.Set("Accept", "application/json")
+	res, err := http.DefaultClient.Do(r)
 	if err != nil {
 		return nil, err
 	}
-	var dadJoke DadJoke
-	err = json.NewDecoder(res.Body).Decode(&dadJoke)
+	var d DadJoke
+	err = json.NewDecoder(res.Body).Decode(&d)
 	if err != nil {
 		return nil, err
 	}
 	//TODO Proper pointer use?
-	return &dadJoke, nil
+	return &d, nil
 }
 
 func (f Fetcher) Get(jokeID string) (*DadJoke, bool, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/j/%s", f.dadJokeURL, jokeID), nil)
+	r, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/j/%s", f.dadJokeURL, jokeID), nil)
 	if err != nil {
 		return nil, false, err
 	}
-	req.Header.Set("Accept", "application/json")
-	res, err := http.DefaultClient.Do(req)
+	r.Header.Set("Accept", "application/json")
+	res, err := http.DefaultClient.Do(r)
 	if err != nil {
 		return nil, false, err
 	}
-	var dadJoke DadJoke
-	err = json.NewDecoder(res.Body).Decode(&dadJoke)
+	var d DadJoke
+	err = json.NewDecoder(res.Body).Decode(&d)
 	if err != nil {
 		return nil, false, err
 	}
-	if dadJoke.Joke == "" {
+	if d.Joke == "" {
 		//API returned 200 ok but with no joke found
 		return nil, false, nil
 	}
-	return &dadJoke, true, nil
+	return &d, true, nil
 }

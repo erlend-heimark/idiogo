@@ -1,9 +1,9 @@
-package externaldadjokes
+package extdadjokes
 
 import (
 	"testing"
 
-	"github.com/erlend-heimark/idiogo/pkg/envvars"
+	"github.com/erlend-heimark/idiogo/envvars"
 	"github.com/stretchr/testify/require"
 )
 

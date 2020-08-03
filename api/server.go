@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,12 +9,6 @@ import (
 
 	"github.com/erlend-heimark/idiogo/extdadjokes"
 )
-
-type response struct {
-	Data       interface{}
-	StatusCode int
-	Err        error
-}
 
 func New(path, port string, db mssql.Client, c extdadjokes.Client) *http.Server {
 	r := chi.NewRouter()
@@ -41,21 +34,4 @@ func handle(r chi.Router, method, path string, handleReq func(r *http.Request) r
 		response := handleReq(r)
 		handleResponse(w, response)
 	}))
-}
-
-func handleResponse(w http.ResponseWriter, res response) {
-	w.WriteHeader(res.StatusCode)
-	if res.Err != nil {
-		_, _ = w.Write([]byte(res.Err.Error()))
-	}
-	if res.Data == nil {
-		return
-	}
-	resp, err := json.Marshal(res.Data)
-	if err != nil {
-		_, _ = w.Write([]byte(err.Error()))
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write(resp)
 }

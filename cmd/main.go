@@ -16,6 +16,9 @@ func main() {
 	}
 	dadJokeFetcher := externaldadjokes.NewFetcher(envVars.DadJokeURL)
 
-	apiHandler := api.New(envVars.Path, envVars.Port, client, dadJokeFetcher)
-	apiHandler.Init()
+	s := api.New(envVars.Path, envVars.Port, client, dadJokeFetcher)
+	err = s.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }

@@ -13,41 +13,20 @@ import (
 
 //TODO Handlers sin hovedoppgave er å håndtere requests og response. Burde ha hjelpemetoder
 
-type Handler struct {
-	path    string
-	port    string
-	db      mssql.Client
-	fetcher externaldadjokes.Fetcher
-}
-
-func New(path, port string, db mssql.Client, fetcher externaldadjokes.Fetcher) Handler {
-	return Handler{
-		path:    path,
-		port:    port,
-		db:      db,
-		fetcher: fetcher,
-	}
-}
-
-func (h Handler) Init() {
+func New(path, port string, db mssql.Client, fetcher externaldadjokes.Fetcher) *http.Server {
 	router := chi.NewRouter()
 
-	router.Route(h.path, func(r chi.Router) {
+	router.Route(path, func(r chi.Router) {
 		r.Route("/dadjokes", func(r chi.Router) {
-			r.Get("/{jokeId}", getDadJoke(h.db, h.fetcher))
-			r.Get("/", getRandomDadJoke(h.fetcher))
-			r.Post("/", createDadJoke(h.db))
+			r.Get("/{jokeId}", getDadJoke(db, fetcher))
+			r.Get("/", getRandomDadJoke(fetcher))
+			r.Post("/", createDadJoke(db))
 		})
 	})
 
-	s := &http.Server{
-		Addr:    fmt.Sprintf(":%s", h.port),
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%s", port),
 		Handler: router,
-	}
-
-	err := s.ListenAndServe()
-	if err != nil {
-		panic(err)
 	}
 }
 
@@ -68,7 +47,7 @@ func getDadJoke(db mssql.Client, fetcher externaldadjokes.Fetcher) http.HandlerF
 		if !exists {
 			return apiResponse{nil, 404, nil}
 		}
-		return apiResponse{mapExternalDadjokeToInternal(extJoke), 200, nil}
+		return apiResponse{mapExternalDadJokeToInternal(extJoke), 200, nil}
 	})
 }
 
@@ -121,7 +100,7 @@ func handleResponse(w http.ResponseWriter, res apiResponse) {
 	if res.data == nil {
 		return
 	}
-	resp, err := json.Marshal(res)
+	resp, err := json.Marshal(res.data)
 	if err != nil {
 		_, _ = w.Write([]byte(res.err.Error()))
 		return
@@ -130,7 +109,7 @@ func handleResponse(w http.ResponseWriter, res apiResponse) {
 	_, _ = w.Write(resp)
 }
 
-func mapExternalDadjokeToInternal(external *externaldadjokes.DadJoke) mssql.DadJoke {
+func mapExternalDadJokeToInternal(external *externaldadjokes.DadJoke) mssql.DadJoke {
 	return mssql.DadJoke{
 		ID:   external.Id,
 		Joke: external.Joke,

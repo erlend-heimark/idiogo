@@ -6,8 +6,6 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
-// Golang MSSQL driver
-
 type Client struct {
 	db *sql.DB
 }

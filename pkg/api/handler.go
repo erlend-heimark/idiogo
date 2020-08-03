@@ -11,19 +11,38 @@ import (
 	"github.com/erlend-heimark/idiogo/pkg/externaldadjokes"
 )
 
-func Init(path, port, dadJokeURL string, client mssql.Client) {
+//TODO Handlers sin hovedoppgave er å håndtere requests og response. Burde ha hjelpemetoder
+//TODO Strukturer slik at vi unngår empty returns. Viktig å ha en struktur som ikke er så lett å bomme på
+
+type Handler struct {
+	path string
+	port string
+	db mssql.Client
+	fetcher externaldadjokes.Fetcher
+}
+
+func New(path, port string, db mssql.Client, fetcher externaldadjokes.Fetcher) Handler {
+	return Handler{
+		path: path,
+		port: port,
+		db: db,
+		fetcher: fetcher,
+	}
+}
+
+func (h Handler) Init() {
 	router := chi.NewRouter()
 
-	router.Route(path, func(r chi.Router) {
+	router.Route(h.path, func(r chi.Router) {
 		r.Route("/dadjokes", func(r chi.Router) {
-			r.Get("/{jokeId}", getDadJoke(client, dadJokeURL))
-			r.Get("/", getRandomDadJoke(dadJokeURL))
-			r.Post("/", createDadJoke(client))
+			r.Get("/{jokeId}", getDadJoke(h.db, h.fetcher))
+			r.Get("/", getRandomDadJoke(h.fetcher))
+			r.Post("/", createDadJoke(h.db))
 		})
 	})
 
 	s := &http.Server{
-		Addr:    fmt.Sprintf(":%s", port),
+		Addr:    fmt.Sprintf(":%s", h.port),
 		Handler: router,
 	}
 
@@ -33,10 +52,10 @@ func Init(path, port, dadJokeURL string, client mssql.Client) {
 	}
 }
 
-func getDadJoke(client mssql.Client, dadJokeURL string) http.HandlerFunc {
+func getDadJoke(db mssql.Client, fetcher externaldadjokes.Fetcher) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		jokeID := chi.URLParam(r, "jokeId")
-		savedJoke, exists, err := client.GetDadJoke(r.Context(), jokeID)
+		savedJoke, exists, err := db.GetDadJoke(r.Context(), jokeID)
 		if err != nil {
 			writeErrorResponse(w, err)
 			return
@@ -45,28 +64,32 @@ func getDadJoke(client mssql.Client, dadJokeURL string) http.HandlerFunc {
 			writeSuccessResponse(w, savedJoke)
 			return
 		}
-		extJoke, err := externaldadjokes.Get(dadJokeURL)
+		extJoke, exists, err := fetcher.Get(jokeID)
 		if err != nil {
 			writeErrorResponse(w, err)
 		}
+		if !exists {
+			w.WriteHeader(404)
+			return
+		}
 
-		writeSuccessResponse(w, extJoke)
+		writeSuccessResponse(w, mapExternalDadjokeToInternal(extJoke))
 	}
 }
 
-func getRandomDadJoke(dadJokeURL string) http.HandlerFunc {
+func getRandomDadJoke(fetcher externaldadjokes.Fetcher) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		d, err := externaldadjokes.Get(dadJokeURL)
+		d, err := fetcher.GetRandom()
 		if err != nil {
 			writeErrorResponse(w, err)
 			return
 		}
 
-		writeSuccessResponse(w, d)
+		writeSuccessResponse(w, mapExternalDadjokeToInternal(d))
 	}
 }
 
-func createDadJoke(client mssql.Client) http.HandlerFunc {
+func createDadJoke(db mssql.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var dadJoke mssql.DadJoke
 		err := json.NewDecoder(r.Body).Decode(&dadJoke)
@@ -76,7 +99,7 @@ func createDadJoke(client mssql.Client) http.HandlerFunc {
 			return
 		}
 
-		err = client.CreateDadJoke(r.Context(), dadJoke)
+		err = db.CreateDadJoke(r.Context(), dadJoke)
 		if err != nil {
 			writeErrorResponse(w, err)
 			return
@@ -104,5 +127,12 @@ func writeSuccessResponse(w http.ResponseWriter, response interface{}) {
 	_, err = w.Write(resp)
 	if err != nil {
 		panic("oops")
+	}
+}
+
+func mapExternalDadjokeToInternal(external *externaldadjokes.DadJoke) mssql.DadJoke {
+	return mssql.DadJoke{
+		ID:   external.Id,
+		Joke: external.Joke,
 	}
 }

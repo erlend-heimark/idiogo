@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 )
-
+//TODO Create separate return type, just to see how it should be solved
 type DadJoke struct {
 	ID   string `db:"id"`
 	Joke string `db:"joke"`

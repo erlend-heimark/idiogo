@@ -63,7 +63,7 @@ func getDadJoke(db mssql.Client, fetcher externaldadjokes.Fetcher) http.HandlerF
 		}
 		extJoke, exists, err := fetcher.Get(jokeID)
 		if err != nil {
-			return apiResponse{nil, 0, err}
+			return apiResponse{nil, 500, err}
 		}
 		if !exists {
 			return apiResponse{nil, 404, nil}
@@ -94,7 +94,7 @@ func createDadJoke(db mssql.Client) http.HandlerFunc {
 		if err != nil {
 			return apiResponse{nil, 500, err}
 		}
-		return apiResponse{nil, 200, nil}
+		return apiResponse{nil, 201, nil}
 	})
 }
 
@@ -118,15 +118,16 @@ func handleResponse(w http.ResponseWriter, res apiResponse) {
 	if res.err != nil {
 		_, _ = w.Write([]byte(res.err.Error()))
 	}
-	if res.data != nil {
-		resp, err := json.Marshal(res)
-		if err != nil {
-			_, _ = w.Write([]byte(res.err.Error()))
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write(resp)
+	if res.data == nil {
+		return
 	}
+	resp, err := json.Marshal(res)
+	if err != nil {
+		_, _ = w.Write([]byte(res.err.Error()))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(resp)
 }
 
 func mapExternalDadjokeToInternal(external *externaldadjokes.DadJoke) mssql.DadJoke {

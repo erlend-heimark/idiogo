@@ -10,13 +10,13 @@ import (
 func main() {
 	envVars := envvars.New()
 
-	client, err := mssql.NewClient(envVars.DBConnectionString)
+	dbClient, err := mssql.NewClient(envVars.DBConnectionString)
 	if err != nil {
 		panic(err)
 	}
-	dadJokeFetcher := extdadjokes.NewFetcher(envVars.DadJokeURL)
+	extDadJokeClient := extdadjokes.NewClient(envVars.DadJokeURL)
 
-	s := api.New(envVars.Path, envVars.Port, client, dadJokeFetcher)
+	s := api.New(envVars.Path, envVars.Port, dbClient, extDadJokeClient)
 	err = s.ListenAndServe()
 	if err != nil {
 		panic(err)

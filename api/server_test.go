@@ -20,7 +20,7 @@ func TestCreateAndGet(t *testing.T) {
 	e := envvars.New()
 	db, err := mssql.NewClient(e.DBConnectionString)
 	require.NoError(t, err)
-	fetcher := extdadjokes.NewFetcher(e.DadJokeURL)
+	fetcher := extdadjokes.NewClient(e.DadJokeURL)
 	server := New(e.Path, e.Port, db, fetcher)
 
 	url := fmt.Sprintf("%s/%s", e.Path, "dadjokes")

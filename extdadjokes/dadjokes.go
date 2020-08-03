@@ -12,16 +12,16 @@ type DadJoke struct {
 	Status int    `json:"status"`
 }
 
-type Fetcher struct {
+type Client struct {
 	dadJokeURL string
 }
 
-func NewFetcher(dadJokeURL string) Fetcher {
-	return Fetcher{dadJokeURL: dadJokeURL}
+func NewClient(dadJokeURL string) Client {
+	return Client{dadJokeURL: dadJokeURL}
 }
 
-func (f Fetcher) GetRandom() (*DadJoke, error) {
-	r, err := http.NewRequest(http.MethodGet, f.dadJokeURL, nil)
+func (c Client) GetRandom() (*DadJoke, error) {
+	r, err := http.NewRequest(http.MethodGet, c.dadJokeURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -39,8 +39,8 @@ func (f Fetcher) GetRandom() (*DadJoke, error) {
 	return &d, nil
 }
 
-func (f Fetcher) Get(jokeID string) (*DadJoke, bool, error) {
-	r, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/j/%s", f.dadJokeURL, jokeID), nil)
+func (c Client) Get(jokeID string) (*DadJoke, bool, error) {
+	r, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/j/%s", c.dadJokeURL, jokeID), nil)
 	if err != nil {
 		return nil, false, err
 	}
